@@ -1,0 +1,10 @@
+export type Role = 'USER' | 'ADM'
+export type User = { id:number; nome:string; email:string; cpf:string; contato:string|null; role:Role }
+export type Machine = { id:number; nome:string; fabricante:string|null }
+export type Exercise = { id:number; nome:string; agrupamento:Muscle; maquina:string|null }
+export type Muscle = 'PEITO'|'COSTAS'|'OMBRO'|'BICEPS'|'TRICEPS'|'ANTEBRACO'|'ABDOMEN'|'QUADRICEPS'|'POSTERIOR_COXA'|'GLUTEO'|'PANTURRILHA'
+export type Weekday = 'SEGUNDA'|'TERCA'|'QUARTA'|'QUINTA'|'SEXTA'|'SABADO'|'DOMINGO'
+export type WorkoutItem = { id?:number; ordem:number; exercicio:string; maquina:string|null; series:number; repeticoes:number; carga:number }
+export type Workout = { id:number; diaSemana:Weekday; itens:WorkoutItem[] }
+export type ItemRequest = { exercicioId:number; series:number; repeticoes:number; carga:number; ordem:number }
+export type WorkoutRequest = { diaSemana:Weekday; itens:ItemRequest[] }
