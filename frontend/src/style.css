@@ -7,3 +7,99 @@
 @media(max-width:420px){.topbar-avatar{display:none}.topbar-actions{gap:3px}.quick-actions>button{min-width:100%;}.stat-top{letter-spacing:0}.welcome-copy{max-width:100%}.welcome-art{right:-85px}.auth-hero h1{font-size:43px}.auth-bottom span:last-child{display:none}.exercise-row-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.exercise-row-fields .field:first-child{grid-column:1/-1}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 .profile-readonly{padding-top:15px}.profile-readonly p{font-size:11px;color:#818995;border-bottom:1px solid var(--line-soft);padding:10px 0;margin:0}.profile-readonly strong{color:var(--text);font-weight:600}.profile-readonly small{display:block;margin-top:17px;color:#7b838e;font-size:9px;line-height:1.6}:root[data-theme="light"] .profile-readonly p{color:#68717d}:root[data-theme="light"] .profile-readonly strong{color:#17191e}
+.auth-screen {
+  min-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.auth-layout {
+  align-items: center;
+  padding-top: 45px;
+  padding-bottom: 45px;
+}
+
+.auth-card-wrap {
+  width: 100%;
+  align-items: center;
+}
+
+.auth-card {
+  width: min(460px, 100%);
+  max-height: none;
+}
+
+.auth-form {
+  gap: 13px;
+}
+
+.auth-form .form-field {
+  width: 100%;
+  min-width: 0;
+}
+
+.auth-form .form-input-wrap {
+  width: 100%;
+  min-height: 43px;
+}
+
+.auth-form .form-input-wrap input {
+  min-width: 0;
+}
+
+.auth-form .password-toggle {
+  flex-shrink: 0;
+}
+
+.auth-switch {
+  line-height: 1.8;
+}
+
+.auth-switch button:hover {
+  text-decoration: underline;
+}
+
+.auth-submit {
+  min-height: 45px;
+}
+
+@media (max-width: 760px) {
+  .auth-screen {
+    padding-left: 19px;
+    padding-right: 19px;
+  }
+
+  .auth-layout {
+    padding-top: 30px;
+    padding-bottom: 30px;
+    gap: 25px;
+  }
+
+  .auth-card-wrap {
+    width: 100%;
+  }
+
+  .auth-card {
+    width: 100%;
+    max-width: 460px;
+    padding: 24px;
+  }
+
+  .auth-form {
+    gap: 12px;
+  }
+
+  .auth-bottom {
+    flex-shrink: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  .auth-card {
+    padding: 20px;
+  }
+
+  .auth-card h2 {
+    font-size: 22px;
+  }
+}
