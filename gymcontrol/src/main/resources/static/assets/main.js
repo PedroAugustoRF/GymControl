@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Activity, Dumbbell, LayoutDashboard, CalendarDays, ClipboardList, Settings2, Users, LogOut, Sun, Moon, Palette, ChevronDown, Plus, Search, Bell, Menu, X, ArrowUpRight, TrendingUp, Clock3, Target, HeartPulse, MoreHorizontal, Pencil, Trash2, Check, AlertCircle, CheckCircle2, LoaderCircle, ChevronRight, UserRound, ShieldCheck, Weight, Zap, SlidersHorizontal, Save, Eye, EyeOff, Mail, Lock, Hash, Phone, Calendar, Layers3, Filter, RefreshCw, CircleHelp, Dumbbell as DumbbellIcon } from 'lucide-react';
+import { Activity, Dumbbell, LayoutDashboard, CalendarDays, ClipboardList, Users, LogOut, Sun, Moon, Palette, Plus, Search, Menu, X, ArrowUpRight, TrendingUp, Clock3, Target, Pencil, Trash2, Check, AlertCircle, CheckCircle2, LoaderCircle, ChevronRight, UserRound, ShieldCheck, Zap, SlidersHorizontal, Save, Eye, EyeOff, Mail, Lock, Hash, Phone, Calendar, Filter, RefreshCw } from 'lucide-react';
 const API = window.GYMCONTROL_API || '';
 const TOKEN_KEY = 'gymcontrol_token';
 const COLORS = [
@@ -835,21 +835,36 @@ function Machines({ data, reload, notify, canManage }) {
         deleting && React.createElement(ConfirmDelete, { item: deleting.nome, onClose: () => setDeleting(null), onConfirm: remove, busy: busy }));
 }
 function UsersPage({ data, reload, notify, me }) {
-    const [search, setSearch] = useState(''), [deleting, setDeleting] = useState(null), [busy, setBusy] = useState(false), [modal, setModal] = useState(false);
-    const [form, setForm] = useState({ nome: '', email: '', cpf: '', contato: '', password: '', role: 'USER' });
-    const create = async (e) => { e.preventDefault(); setBusy(true); try {
-        await send('/users', 'POST', form);
-        notify(form.role === 'PROF' ? 'Professor cadastrado.' : 'Aluno cadastrado.');
-        setModal(false);
-        setForm({ nome: '', email: '', cpf: '', contato: '', password: '', role: 'USER' });
-        await reload();
-    }
-    catch (err) {
-        notify(err.message, 'error');
-    }
-    finally {
-        setBusy(false);
-    } };
+    const [search, setSearch] = useState(''), [deleting, setDeleting] = useState(null), [busy, setBusy] = useState(false), [modal, setModal] = useState(false), [editing, setEditing] = useState(null);
+    const emptyForm = { nome: '', email: '', cpf: '', contato: '', password: '', role: 'USER' };
+    const [form, setForm] = useState(emptyForm);
+    const openCreate = () => { setEditing(null); setForm({ ...emptyForm }); setModal(true); };
+    const openEdit = u => { setEditing(u); setForm({ nome: u.nome || '', email: u.email || '', cpf: u.cpf || '', contato: u.contato || '', password: '', role: u.role || 'USER' }); setModal(true); };
+    const submit = async (e) => {
+        e.preventDefault();
+        setBusy(true);
+        try {
+            if (editing) {
+                const payload = { nome: form.nome.trim(), email: form.email.trim(), cpf: form.cpf.trim(), contato: form.contato.trim() || null };
+                await send(`/users/${editing.id}`, 'PUT', payload);
+                notify('Dados do usuário atualizados.');
+            }
+            else {
+                await send('/users', 'POST', form);
+                notify(form.role === 'PROF' ? 'Professor cadastrado.' : 'Aluno cadastrado.');
+            }
+            setModal(false);
+            setEditing(null);
+            setForm({ ...emptyForm });
+            await reload();
+        }
+        catch (err) {
+            notify(err.message, 'error');
+        }
+        finally {
+            setBusy(false);
+        }
+    };
     const changeRole = async (u) => { const role = u.role === 'PROF' ? 'USER' : 'PROF'; if (!confirm(`Alterar ${u.nome} para ${role === 'PROF' ? 'Professor' : 'Aluno'}?`))
         return; try {
         await send(`/users/${u.id}/role`, 'PATCH', { role });
@@ -874,7 +889,7 @@ function UsersPage({ data, reload, notify, me }) {
     const filtered = data.users.filter(u => `${u.nome} ${u.email} ${u.cpf}`.toLowerCase().includes(search.toLowerCase()));
     const roleLabel = role => ({ ADM: 'ADMINISTRADOR', PROF: 'PROFESSOR', USER: 'ALUNO' }[role] || role);
     return React.createElement(React.Fragment, null,
-        React.createElement(PageHeading, { eyebrow: "CONTROLE DE ACESSO", title: "Usu\u00E1rios", description: "Cadastre alunos e professores e gerencie os acessos.", action: React.createElement("button", { className: "primary-button", onClick: () => setModal(true) },
+        React.createElement(PageHeading, { eyebrow: "CONTROLE DE ACESSO", title: "Usu\u00E1rios", description: "Cadastre alunos e professores e gerencie os acessos.", action: React.createElement("button", { className: "primary-button", onClick: openCreate },
                 React.createElement(Plus, { size: 17 }),
                 " NOVO CADASTRO") }),
         React.createElement("div", { className: "user-summary" },
@@ -917,14 +932,17 @@ function UsersPage({ data, reload, notify, me }) {
                 React.createElement("span", { className: "table-text" }, u.contato || '—'),
                 React.createElement("span", null,
                     React.createElement("span", { className: `role-pill ${u.role === 'ADM' ? 'admin' : ''}` }, roleLabel(u.role))),
-                React.createElement("div", { className: "row-actions" }, u.role !== 'ADM' && React.createElement(React.Fragment, null,
-                    React.createElement("button", { className: "secondary-button compact", onClick: () => changeRole(u) }, u.role === 'PROF' ? 'Tornar aluno' : 'Tornar professor'),
-                    React.createElement("button", { className: "icon-button danger-hover", onClick: () => setDeleting(u) },
-                        React.createElement(Trash2, { size: 16 })))))),
+                React.createElement("div", { className: "row-actions" },
+                    React.createElement("button", { className: "icon-button", onClick: () => openEdit(u), title: "Editar usu\u00E1rio", "aria-label": `Editar ${u.nome}` },
+                        React.createElement(Pencil, { size: 16 })),
+                    u.role !== 'ADM' && React.createElement(React.Fragment, null,
+                        React.createElement("button", { className: "secondary-button compact", onClick: () => changeRole(u) }, u.role === 'PROF' ? 'Tornar aluno' : 'Tornar professor'),
+                        React.createElement("button", { className: "icon-button danger-hover", onClick: () => setDeleting(u), title: "Excluir usu\u00E1rio" },
+                            React.createElement(Trash2, { size: 16 })))))),
             filtered.length === 0 && React.createElement(EmptyState, { icon: Users, title: "Nenhum usu\u00E1rio encontrado", text: "Tente buscar por outro termo." })),
-        modal && React.createElement(Modal, { title: "Cadastrar usu\u00E1rio", subtitle: "Crie uma conta de aluno ou professor.", onClose: () => setModal(false) },
-            React.createElement("form", { onSubmit: create, className: "modal-form" },
-                React.createElement(Field, { label: "Tipo de conta" },
+        modal && React.createElement(Modal, { title: editing ? 'Editar usuário' : 'Cadastrar usuário', subtitle: editing ? 'Atualize os dados cadastrais deste usuário.' : 'Crie uma conta de aluno ou professor.', onClose: () => { setModal(false); setEditing(null); } },
+            React.createElement("form", { onSubmit: submit, className: "modal-form" },
+                !editing && React.createElement(Field, { label: "Tipo de conta" },
                     React.createElement("select", { value: form.role, onChange: e => setForm({ ...form, role: e.target.value }) },
                         React.createElement("option", { value: "USER" }, "Aluno (USER)"),
                         React.createElement("option", { value: "PROF" }, "Professor (PROF)"))),
@@ -936,9 +954,10 @@ function UsersPage({ data, reload, notify, me }) {
                     React.createElement("input", { value: form.cpf, onChange: e => setForm({ ...form, cpf: e.target.value }), required: true })),
                 React.createElement(Field, { label: "Contato" },
                     React.createElement("input", { value: form.contato, onChange: e => setForm({ ...form, contato: e.target.value }) })),
-                React.createElement(Field, { label: "Senha inicial" },
+                !editing && React.createElement(Field, { label: "Senha inicial" },
                     React.createElement("input", { type: "password", minLength: "6", value: form.password, onChange: e => setForm({ ...form, password: e.target.value }), required: true })),
-                React.createElement(FormActions, { onCancel: () => setModal(false), busy: busy, label: "Cadastrar" }))),
+                editing && React.createElement("p", { className: "inline-warning" }, "A edi\u00E7\u00E3o atualiza nome, e-mail, CPF e contato. A senha e o tipo de conta s\u00E3o gerenciados separadamente."),
+                React.createElement(FormActions, { onCancel: () => { setModal(false); setEditing(null); }, busy: busy, label: editing ? 'Salvar alterações' : 'Cadastrar' }))),
         deleting && React.createElement(ConfirmDelete, { item: deleting.nome, onClose: () => setDeleting(null), onConfirm: remove, busy: busy }));
 }
 function Profile({ user, isAdmin, onUpdate, notify }) {
