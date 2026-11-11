@@ -168,8 +168,6 @@ function App() {
         ...(isAdmin ? [{ id: 'usuarios', label: 'Usuários', icon: Users, group: 'admin' }] : []),
         { id: 'perfil', label: 'Meu perfil', icon: UserRound, group: 'account' }
     ];
-    useEffect(() => { if (isStudent && page !== 'treinos')
-        setPage('treinos'); }, [isStudent, page]);
     return React.createElement("div", { className: "app-shell" },
         mobileNav && React.createElement("button", { className: "mobile-scrim", onClick: () => setMobileNav(false), "aria-label": "Fechar menu" }),
         React.createElement("aside", { className: `sidebar ${mobileNav ? 'sidebar-open' : ''}` },
