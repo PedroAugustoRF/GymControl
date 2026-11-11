@@ -1,3 +1,4 @@
+
 package com.spring.gymcontrol.config;
 
 import jakarta.servlet.DispatcherType;
@@ -44,7 +45,7 @@ public class SecurityConfig {
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
 
                         .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/auth/register").denyAll()
+                        .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
 
                         .requestMatchers(HttpMethod.GET, "/maquinas", "/maquinas/**", "/exercicios", "/exercicios/**").hasAnyAuthority(ADM, PROF)
                         .requestMatchers("/maquinas", "/maquinas/**").hasAnyAuthority(ADM, PROF)
@@ -59,7 +60,6 @@ public class SecurityConfig {
                         .requestMatchers("/users", "/users/**").hasAuthority(ADM)
 
                         .requestMatchers("/", "/index.html", "/favicon.png", "/robots.txt", "/assets/**").permitAll()
-
 
                         .anyRequest().authenticated())
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
