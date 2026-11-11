@@ -36,38 +36,50 @@ public class SecurityConfig {
         return http
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(exception -> exception
-                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+                        .authenticationEntryPoint(
+                                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
                         .accessDeniedHandler((request, response, accessDenied) ->
                                 response.setStatus(HttpStatus.FORBIDDEN.value())))
                 .authorizeHttpRequests(authorize -> authorize
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
-
                         .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
-
-                        .requestMatchers(HttpMethod.GET, "/maquinas", "/maquinas/**", "/exercicios", "/exercicios/**").hasAnyAuthority(ADM, PROF)
-                        .requestMatchers("/maquinas", "/maquinas/**").hasAnyAuthority(ADM, PROF)
-                        .requestMatchers("/exercicios", "/exercicios/**").hasAuthority(ADM)
-
-                        .requestMatchers("/treinos/itens", "/treinos/itens/**", "/treinos/*/itens").denyAll()
-                        .requestMatchers(HttpMethod.GET, "/treinos", "/treinos/**").authenticated()
-                        .requestMatchers("/treinos", "/treinos/**").hasAnyAuthority(ADM, PROF)
-
+                        .requestMatchers(HttpMethod.GET,
+                                "/maquinas", "/maquinas/**",
+                                "/exercicios", "/exercicios/**")
+                                .hasAnyAuthority(ADM, PROF)
+                        .requestMatchers("/maquinas", "/maquinas/**")
+                                .hasAnyAuthority(ADM, PROF)
+                        .requestMatchers("/exercicios", "/exercicios/**")
+                                .hasAuthority(ADM)
+                        .requestMatchers("/treinos/itens",
+                                "/treinos/itens/**",
+                                "/treinos/*/itens").denyAll()
+                        .requestMatchers(HttpMethod.GET, "/treinos", "/treinos/**")
+                                .authenticated()
+                        .requestMatchers("/treinos", "/treinos/**")
+                                .hasAnyAuthority(ADM, PROF)
                         .requestMatchers("/users/me").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/users/alunos").hasAnyAuthority(ADM, PROF)
-                        .requestMatchers("/users", "/users/**").hasAuthority(ADM)
-
-                        .requestMatchers("/", "/index.html", "/favicon.png", "/robots.txt", "/assets/**").permitAll()
-
+                        .requestMatchers(HttpMethod.GET, "/users/alunos")
+                                .hasAnyAuthority(ADM, PROF)
+                        .requestMatchers("/users", "/users/**")
+                                .hasAuthority(ADM)
+                        .requestMatchers("/", "/index.html",
+                                "/favicon.png", "/robots.txt",
+                                "/assets/**").permitAll()
                         .anyRequest().authenticated())
-                .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(securityFilter,
+                        UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration authenticationConfiguration)
+            throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
