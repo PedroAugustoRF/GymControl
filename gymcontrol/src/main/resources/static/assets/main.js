@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Activity, Dumbbell, LayoutDashboard, CalendarDays, ClipboardList, Users, LogOut, Sun, Moon, Palette, Plus, Search, Menu, X, ArrowUpRight, TrendingUp, Clock3, Target, Pencil, Trash2, Check, AlertCircle, CheckCircle2, LoaderCircle, ChevronRight, UserRound, ShieldCheck, Zap, SlidersHorizontal, Save, Eye, EyeOff, Mail, Lock, Calendar, Filter, RefreshCw } from 'lucide-react';
+import { Activity, Dumbbell, LayoutDashboard, CalendarDays, ClipboardList, Settings2, Users, LogOut, Sun, Moon, Palette, ChevronDown, Plus, Search, Bell, Menu, X, ArrowUpRight, TrendingUp, Clock3, Target, HeartPulse, MoreHorizontal, Pencil, Trash2, Check, AlertCircle, CheckCircle2, LoaderCircle, ChevronRight, UserRound, ShieldCheck, Weight, Zap, SlidersHorizontal, Save, Eye, EyeOff, Mail, Lock, Hash, Phone, Calendar, Layers3, Filter, RefreshCw, CircleHelp, Dumbbell as DumbbellIcon } from 'lucide-react';
 const API = window.GYMCONTROL_API || '';
 const TOKEN_KEY = 'gymcontrol_token';
 const COLORS = [
@@ -266,18 +266,56 @@ function AppearancePanel({ theme, setTheme, accent, setAccent, close }) { return
     React.createElement("div", { className: "color-grid" }, COLORS.map(c => React.createElement("button", { key: c.id, title: c.name, "aria-label": c.name, className: accent === c.id ? 'chosen' : '', style: { '--swatch': c.value }, onClick: () => setAccent(c.id) }, accent === c.id && React.createElement(Check, { size: 15 })))),
     React.createElement("p", { className: "panel-note" }, "A textura do painel acompanha a cor selecionada.")); }
 function AuthScreen({ onLogin, theme, setTheme, accent, setAccent, notify }) {
-    const [email, setEmail] = useState(''), [password, setPassword] = useState(''), [busy, setBusy] = useState(false), [showPassword, setShowPassword] = useState(false);
-    const submit = async (e) => { e.preventDefault(); setBusy(true); try {
-        const result = await send('/auth/login', 'POST', { email: email.trim(), password });
-        await onLogin(result.token);
-    }
-    catch (err) {
-        notify(err.message, 'error');
-    }
-    finally {
-        setBusy(false);
-    } };
-    return React.createElement("div", { className: "auth-screen" },
+    const [mode, setMode] = useState('login');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [nome, setNome] = useState('');
+    const [cpf, setCpf] = useState('');
+    const [contato, setContato] = useState('');
+    const [busy, setBusy] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const changeMode = nextMode => {
+        setMode(nextMode);
+        setPassword('');
+        setConfirmPassword('');
+    };
+    const submit = async (e) => {
+        e.preventDefault();
+        if (mode === 'register' && password !== confirmPassword) {
+            notify('As senhas não coincidem.', 'error');
+            return;
+        }
+        setBusy(true);
+        try {
+            if (mode === 'login') {
+                const result = await send('/auth/login', 'POST', { email: email.trim(), password });
+                await onLogin(result.token);
+            }
+            else {
+                await send('/auth/register', 'POST', {
+                    nome: nome.trim(),
+                    cpf: cpf.trim(),
+                    contato: contato.trim(),
+                    email: email.trim(),
+                    password
+                });
+                notify('Conta criada com sucesso. Faça login para continuar.');
+                changeMode('login');
+                setNome('');
+                setCpf('');
+                setContato('');
+            }
+        }
+        catch (err) {
+            notify(err.message, 'error');
+        }
+        finally {
+            setBusy(false);
+        }
+    };
+    return React.createElement("div", { className: `auth-screen ${mode === 'register' ? 'auth-register' : ''}` },
         React.createElement("div", { className: "auth-texture" }),
         React.createElement("div", { className: "auth-top" },
             React.createElement("div", { className: "sidebar-brand" },
@@ -323,19 +361,33 @@ function AuthScreen({ onLogin, theme, setTheme, accent, setAccent, notify }) {
                     React.createElement("span", null, "."))),
             React.createElement("section", { className: "auth-card-wrap" },
                 React.createElement("div", { className: "auth-card" },
-                    React.createElement("div", { className: "auth-card-kicker" }, "\u00C1REA DE ACESSO"),
-                    React.createElement("h2", null, "Bem-vindo ao GymControl."),
-                    React.createElement("p", { className: "auth-description" }, "Entre com os dados da conta fornecida pela administra\u00E7\u00E3o."),
+                    React.createElement("div", { className: "auth-card-kicker" }, mode === 'login' ? 'ÁREA DE ACESSO' : 'NOVO CADASTRO'),
+                    React.createElement("h2", null, mode === 'login' ? 'Bem-vindo ao GymControl.' : 'Crie sua conta.'),
+                    React.createElement("p", { className: "auth-description" }, mode === 'login' ? 'Entre com seus dados para acessar seus treinos.' : 'Preencha seus dados para criar seu acesso ao GymControl.'),
                     React.createElement("form", { onSubmit: submit, className: "auth-form" },
+                        mode === 'register' && React.createElement(React.Fragment, null,
+                            React.createElement(FormField, { label: "Nome completo", icon: UserRound },
+                                React.createElement("input", { autoComplete: "name", value: nome, onChange: e => setNome(e.target.value), required: true, maxLength: 120, placeholder: "Seu nome completo" })),
+                            React.createElement(FormField, { label: "CPF", icon: Hash },
+                                React.createElement("input", { inputMode: "numeric", autoComplete: "off", value: cpf, onChange: e => setCpf(e.target.value), required: true, maxLength: 14, placeholder: "000.000.000-00" })),
+                            React.createElement(FormField, { label: "Contato (opcional)", icon: Phone },
+                                React.createElement("input", { type: "tel", autoComplete: "tel", value: contato, onChange: e => setContato(e.target.value), maxLength: 30, placeholder: "(00) 00000-0000" }))),
                         React.createElement(FormField, { label: "E-mail", icon: Mail },
-                            React.createElement("input", { type: "email", value: email, onChange: e => setEmail(e.target.value), required: true, placeholder: "voce@email.com" })),
+                            React.createElement("input", { type: "email", autoComplete: "email", value: email, onChange: e => setEmail(e.target.value), required: true, maxLength: 180, placeholder: "voce@email.com" })),
                         React.createElement(FormField, { label: "Senha", icon: Lock },
-                            React.createElement("input", { type: showPassword ? 'text' : 'password', value: password, onChange: e => setPassword(e.target.value), required: true, placeholder: "Sua senha" }),
-                            React.createElement("button", { type: "button", className: "password-toggle", onClick: () => setShowPassword(v => !v) }, showPassword ? React.createElement(EyeOff, { size: 17 }) : React.createElement(Eye, { size: 17 }))),
+                            React.createElement("input", { type: showPassword ? 'text' : 'password', autoComplete: mode === 'login' ? 'current-password' : 'new-password', value: password, onChange: e => setPassword(e.target.value), required: true, minLength: mode === 'register' ? 6 : 1, placeholder: mode === 'register' ? 'Mínimo de 6 caracteres' : 'Sua senha' }),
+                            React.createElement("button", { type: "button", className: "password-toggle", onClick: () => setShowPassword(v => !v), "aria-label": showPassword ? 'Ocultar senha' : 'Mostrar senha' }, showPassword ? React.createElement(EyeOff, { size: 17 }) : React.createElement(Eye, { size: 17 }))),
+                        mode === 'register' && React.createElement(FormField, { label: "Confirmar senha", icon: Lock },
+                            React.createElement("input", { type: showConfirmPassword ? 'text' : 'password', autoComplete: "new-password", value: confirmPassword, onChange: e => setConfirmPassword(e.target.value), required: true, minLength: 6, placeholder: "Digite a senha novamente" }),
+                            React.createElement("button", { type: "button", className: "password-toggle", onClick: () => setShowConfirmPassword(v => !v), "aria-label": showConfirmPassword ? 'Ocultar confirmação' : 'Mostrar confirmação' }, showConfirmPassword ? React.createElement(EyeOff, { size: 17 }) : React.createElement(Eye, { size: 17 }))),
                         React.createElement("button", { className: "primary-button auth-submit", disabled: busy },
                             busy ? React.createElement(LoaderCircle, { className: "spin", size: 18 }) : null,
-                            "ENTRAR NO PAINEL",
+                            mode === 'login' ? 'ENTRAR NO PAINEL' : 'CRIAR MINHA CONTA',
                             React.createElement(ArrowUpRight, { size: 18 }))),
+                    React.createElement("div", { className: "auth-switch" },
+                        mode === 'login' ? 'Ainda não tem uma conta?' : 'Já possui uma conta?',
+                        " ",
+                        React.createElement("button", { type: "button", onClick: () => changeMode(mode === 'login' ? 'register' : 'login') }, mode === 'login' ? 'Criar conta' : 'Fazer login')),
                     React.createElement("div", { className: "auth-security" },
                         React.createElement(ShieldCheck, { size: 15 }),
                         " ACESSO PROTEGIDO POR AUTENTICA\u00C7\u00C3O")))),
