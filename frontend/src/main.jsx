@@ -180,13 +180,14 @@ function NavGroup({title,items,page,changePage}) { return <div className="nav-gr
 function AppearancePanel({theme,setTheme,accent,setAccent,close}) { return <div className="appearance-panel"><div className="panel-heading"><strong>Aparência</strong><button className="icon-button" onClick={close}><X size={16}/></button></div><span className="setting-label">TEMA</span><div className="theme-choices"><button className={theme==='dark'?'selected':''} onClick={()=>setTheme('dark')}><Moon size={17}/>Escuro</button><button className={theme==='light'?'selected':''} onClick={()=>setTheme('light')}><Sun size={17}/>Claro</button></div><span className="setting-label">COR DE DESTAQUE</span><div className="color-grid">{COLORS.map(c=><button key={c.id} title={c.name} aria-label={c.name} className={accent===c.id?'chosen':''} style={{'--swatch':c.value}} onClick={()=>setAccent(c.id)}>{accent===c.id&&<Check size={15}/>}</button>)}</div><p className="panel-note">A textura do painel acompanha a cor selecionada.</p></div> }
 
 
+
 function AuthScreen({onLogin,theme,setTheme,accent,setAccent,notify}) {
   const [mode,setMode] = useState('login')
+  const [email,setEmail] = useState('')
+  const [password,setPassword] = useState('')
   const [nome,setNome] = useState('')
   const [cpf,setCpf] = useState('')
   const [contato,setContato] = useState('')
-  const [email,setEmail] = useState('')
-  const [password,setPassword] = useState('')
   const [confirmPassword,setConfirmPassword] = useState('')
   const [busy,setBusy] = useState(false)
   const [showPassword,setShowPassword] = useState(false)
@@ -196,12 +197,12 @@ function AuthScreen({onLogin,theme,setTheme,accent,setAccent,notify}) {
 
     if (mode === 'register') {
       if (password !== confirmPassword) {
-        notify('As senhas não coincidem.', 'error')
+        notify('As senhas não coincidem.','error')
         return
       }
 
-      if (cpf.replace(/\D/g, '').length !== 11) {
-        notify('Informe um CPF válido com 11 dígitos.', 'error')
+      if (password.length < 6) {
+        notify('A senha deve ter pelo menos 6 caracteres.','error')
         return
       }
     }
@@ -210,15 +211,15 @@ function AuthScreen({onLogin,theme,setTheme,accent,setAccent,notify}) {
 
     try {
       if (mode === 'register') {
-        await send('/auth/register', 'POST', {
+        await send('/auth/register','POST',{
           nome: nome.trim(),
-          cpf: cpf.replace(/\D/g, ''),
-          contato: contato.trim(),
           email: email.trim(),
+          cpf: cpf.trim(),
+          contato: contato.trim(),
           password
         })
 
-        notify('Conta criada com sucesso! Faça seu login.')
+        notify('Cadastro realizado! Faça login para continuar.')
         setMode('login')
         setPassword('')
         setConfirmPassword('')
@@ -226,15 +227,15 @@ function AuthScreen({onLogin,theme,setTheme,accent,setAccent,notify}) {
         setCpf('')
         setContato('')
       } else {
-        const result = await send('/auth/login', 'POST', {
+        const result = await send('/auth/login','POST',{
           email: email.trim(),
           password
         })
 
         await onLogin(result.token)
       }
-    } catch (err) {
-      notify(err.message, 'error')
+    } catch(err) {
+      notify(err.message,'error')
     } finally {
       setBusy(false)
     }
@@ -254,25 +255,25 @@ function AuthScreen({onLogin,theme,setTheme,accent,setAccent,notify}) {
         </div>
 
         <div className="auth-tools">
-          <button className="auth-theme" onClick={() => setTheme(theme==='dark'?'light':'dark')}>
+          <button className="auth-theme"
+            onClick={()=>setTheme(theme==='dark'?'light':'dark')}>
             {theme==='dark'?<Sun size={17}/>:<Moon size={17}/>}
             <span>{theme==='dark'?'Modo claro':'Modo escuro'}</span>
           </button>
 
-          <button className="auth-theme" onClick={() => document.getElementById('auth-colors')?.classList.toggle('show')}>
+          <button className="auth-theme"
+            onClick={()=>document.getElementById('auth-colors')?.classList.toggle('show')}>
             <Palette size={17}/>
             <span>Cor</span>
           </button>
 
           <div id="auth-colors" className="auth-color-pop">
-            {COLORS.map(c => (
-              <button
-                key={c.id}
+            {COLORS.map(c=>
+              <button key={c.id}
                 style={{background:c.value}}
-                onClick={() => setAccent(c.id)}
-                aria-label={c.name}
-              />
-            ))}
+                onClick={()=>setAccent(c.id)}
+                aria-label={c.name}/>
+            )}
           </div>
         </div>
       </div>
@@ -290,8 +291,9 @@ function AuthScreen({onLogin,theme,setTheme,accent,setAccent,notify}) {
           </h1>
 
           <p>
-            Organize sua rotina, acompanhe seus exercícios e mantenha o foco
-            no que realmente importa: sua evolução.
+            Organize sua rotina, acompanhe seus exercícios
+            e mantenha o foco no que realmente importa:
+            sua evolução.
           </p>
 
           <div className="auth-stats">
@@ -304,121 +306,122 @@ function AuthScreen({onLogin,theme,setTheme,accent,setAccent,notify}) {
         </section>
 
         <section className="auth-card-wrap">
-          <div className="auth-card">
+          <div className={`auth-card ${mode==='register'?'auth-card-register':''}`}>
+
             <div className="auth-card-kicker">
-              {mode==='login'?'ÁREA DE ACESSO':'NOVA CONTA'}
+              {mode==='login'?'ÁREA DE ACESSO':'NOVO USUÁRIO'}
             </div>
 
             <h2>
-              {mode==='login'?'Bem-vindo ao GymControl.':'Crie sua conta.'}
+              {mode==='login'
+                ?'Bem-vindo ao GymControl.'
+                :'Crie sua conta.'}
             </h2>
 
             <p className="auth-description">
               {mode==='login'
-                ? 'Entre com os dados da sua conta.'
-                : 'Preencha seus dados para começar a treinar.'}
+                ?'Entre com os dados da sua conta.'
+                :'Preencha seus dados para começar a treinar.'}
             </p>
 
             <form onSubmit={submit} className="auth-form">
 
               {mode==='register' && (
                 <>
-                  <FormField label="NOME COMPLETO" icon={UserRound}>
+                  <FormField label="Nome completo" icon={UserRound}>
                     <input
-                      type="text"
                       value={nome}
                       onChange={e=>setNome(e.target.value)}
                       required
-                      maxLength={120}
                       placeholder="Seu nome completo"
                     />
                   </FormField>
 
-                  <FormField label="CPF" icon={Hash}>
-                    <input
-                      type="text"
-                      value={cpf}
-                      onChange={e=>setCpf(e.target.value.replace(/\D/g,'').slice(0,11))}
-                      required
-                      inputMode="numeric"
-                      maxLength={11}
-                      placeholder="Somente números"
-                    />
-                  </FormField>
+                  <div className="form-grid">
+                    <FormField label="CPF" icon={Hash}>
+                      <input
+                        value={cpf}
+                        onChange={e=>setCpf(e.target.value)}
+                        required
+                        placeholder="Seu CPF"
+                      />
+                    </FormField>
 
-                  <FormField label="CONTATO" icon={Phone}>
-                    <input
-                      type="tel"
-                      value={contato}
-                      onChange={e=>setContato(e.target.value)}
-                      placeholder="Seu telefone"
-                    />
-                  </FormField>
+                    <FormField label="Contato" icon={Phone}>
+                      <input
+                        value={contato}
+                        onChange={e=>setContato(e.target.value)}
+                        placeholder="Telefone"
+                      />
+                    </FormField>
+                  </div>
                 </>
               )}
 
-              <FormField label="E-MAIL" icon={Mail}>
+              <FormField label="E-mail" icon={Mail}>
                 <input
                   type="email"
                   value={email}
                   onChange={e=>setEmail(e.target.value)}
                   required
-                  maxLength={150}
                   placeholder="voce@email.com"
                 />
               </FormField>
 
-              <FormField label="SENHA" icon={Lock}>
+              <FormField label="Senha" icon={Lock}>
                 <input
                   type={showPassword?'text':'password'}
                   value={password}
                   onChange={e=>setPassword(e.target.value)}
                   required
                   minLength={6}
-                  placeholder="Sua senha"
+                  placeholder="Mínimo de 6 caracteres"
                 />
 
-                <button
-                  type="button"
+                <button type="button"
                   className="password-toggle"
-                  onClick={()=>setShowPassword(v=>!v)}
-                  aria-label="Mostrar ou ocultar senha"
-                >
+                  onClick={()=>setShowPassword(v=>!v)}>
                   {showPassword?<EyeOff size={17}/>:<Eye size={17}/>}
                 </button>
               </FormField>
 
               {mode==='register' && (
-                <FormField label="CONFIRMAR SENHA" icon={Lock}>
+                <FormField label="Confirmar senha" icon={Lock}>
                   <input
-                    type={showPassword?'text':'password'}
+                    type="password"
                     value={confirmPassword}
                     onChange={e=>setConfirmPassword(e.target.value)}
                     required
                     minLength={6}
-                    placeholder="Repita sua senha"
+                    placeholder="Digite a senha novamente"
                   />
                 </FormField>
               )}
 
-              <button className="primary-button auth-submit" disabled={busy}>
-                {busy?<LoaderCircle className="spin" size={18}/>:null}
+              <button className="primary-button auth-submit"
+                disabled={busy}>
+                {busy
+                  ?<LoaderCircle className="spin" size={18}/>
+                  :null}
+
                 {mode==='login'?'ENTRAR NO PAINEL':'CRIAR MINHA CONTA'}
+
                 <ArrowUpRight size={18}/>
               </button>
             </form>
 
             <div className="auth-switch">
-              {mode==='login'?'Ainda não tem uma conta?':'Já possui cadastro?'}
-              <button
-                type="button"
+              {mode==='login'
+                ?'Ainda não possui uma conta?'
+                :'Já possui uma conta?'}
+
+              <button type="button"
                 onClick={()=>{
                   setMode(mode==='login'?'register':'login')
                   setPassword('')
                   setConfirmPassword('')
-                }}
-              >
-                {mode==='login'?'Criar conta':'Fazer login'}
+                }}>
+                {mode==='login'?'Cadastre-se':'Fazer login'}
               </button>
             </div>
 
@@ -437,7 +440,6 @@ function AuthScreen({onLogin,theme,setTheme,accent,setAccent,notify}) {
     </div>
   )
 }
-
 
 function FormField({label,icon:Icon,children}) { return <label className="form-field"><span>{label}</span><div className="form-input-wrap"><Icon size={17}/>{children}</div></label> }
 
