@@ -179,13 +179,265 @@ function NavGroup({title,items,page,changePage}) { return <div className="nav-gr
 
 function AppearancePanel({theme,setTheme,accent,setAccent,close}) { return <div className="appearance-panel"><div className="panel-heading"><strong>Aparência</strong><button className="icon-button" onClick={close}><X size={16}/></button></div><span className="setting-label">TEMA</span><div className="theme-choices"><button className={theme==='dark'?'selected':''} onClick={()=>setTheme('dark')}><Moon size={17}/>Escuro</button><button className={theme==='light'?'selected':''} onClick={()=>setTheme('light')}><Sun size={17}/>Claro</button></div><span className="setting-label">COR DE DESTAQUE</span><div className="color-grid">{COLORS.map(c=><button key={c.id} title={c.name} aria-label={c.name} className={accent===c.id?'chosen':''} style={{'--swatch':c.value}} onClick={()=>setAccent(c.id)}>{accent===c.id&&<Check size={15}/>}</button>)}</div><p className="panel-note">A textura do painel acompanha a cor selecionada.</p></div> }
 
+
 function AuthScreen({onLogin,theme,setTheme,accent,setAccent,notify}) {
-  const [email,setEmail]=useState(''),[password,setPassword]=useState(''),[busy,setBusy]=useState(false),[showPassword,setShowPassword]=useState(false)
-  const submit=async e=>{e.preventDefault();setBusy(true);try{const result=await send('/auth/login','POST',{email:email.trim(),password});await onLogin(result.token)}catch(err){notify(err.message,'error')}finally{setBusy(false)}}
-  return <div className="auth-screen"><div className="auth-texture"/><div className="auth-top"><div className="sidebar-brand"><div className="brand-mark"><Activity/></div><div><strong>GYM<span>CONTROL</span></strong><small>TRAINING MANAGEMENT</small></div></div><div className="auth-tools"><button className="auth-theme" onClick={()=>setTheme(theme==='dark'?'light':'dark')}>{theme==='dark'?<Sun size={17}/>:<Moon size={17}/>}<span>{theme==='dark'?'Modo claro':'Modo escuro'}</span></button><button className="auth-theme" onClick={()=>document.getElementById('auth-colors')?.classList.toggle('show')}><Palette size={17}/><span>Cor</span></button><div id="auth-colors" className="auth-color-pop">{COLORS.map(c=><button key={c.id} style={{background:c.value}} onClick={()=>setAccent(c.id)} aria-label={c.name}/>)}</div></div></div>
-    <div className="auth-layout"><section className="auth-hero"><span className="eyebrow"><span/> PERFORMANCE, ORGANIZAÇÃO E EVOLUÇÃO</span><h1>SEU PRÓXIMO<br/>NÍVEL COMEÇA<br/><em>NO TREINO.</em></h1><p>Organize sua rotina, acompanhe seus exercícios e mantenha o foco no que realmente importa: sua evolução.</p><div className="auth-stats"><div><strong>01</strong><span>PLANEJE</span></div><div><strong>02</strong><span>EXECUTE</span></div><div><strong>03</strong><span>EVOLUA</span></div></div><div className="hero-watermark">GC<span>.</span></div></section>
-    <section className="auth-card-wrap"><div className="auth-card"><div className="auth-card-kicker">ÁREA DE ACESSO</div><h2>Bem-vindo ao GymControl.</h2><p className="auth-description">Entre com os dados da conta fornecida pela administração.</p><form onSubmit={submit} className="auth-form"><FormField label="E-mail" icon={Mail}><input type="email" value={email} onChange={e=>setEmail(e.target.value)} required placeholder="voce@email.com"/></FormField><FormField label="Senha" icon={Lock}><input type={showPassword?'text':'password'} value={password} onChange={e=>setPassword(e.target.value)} required placeholder="Sua senha"/><button type="button" className="password-toggle" onClick={()=>setShowPassword(v=>!v)}>{showPassword?<EyeOff size={17}/>:<Eye size={17}/>}</button></FormField><button className="primary-button auth-submit" disabled={busy}>{busy?<LoaderCircle className="spin" size={18}/>:null}ENTRAR NO PAINEL<ArrowUpRight size={18}/></button></form><div className="auth-security"><ShieldCheck size={15}/> ACESSO PROTEGIDO POR AUTENTICAÇÃO</div></div></section></div><div className="auth-bottom"><span>GYMCONTROL © {new Date().getFullYear()}</span><span>DISCIPLINA CONSTRÓI RESULTADOS.</span></div></div>
+  const [mode,setMode] = useState('login')
+  const [nome,setNome] = useState('')
+  const [cpf,setCpf] = useState('')
+  const [contato,setContato] = useState('')
+  const [email,setEmail] = useState('')
+  const [password,setPassword] = useState('')
+  const [confirmPassword,setConfirmPassword] = useState('')
+  const [busy,setBusy] = useState(false)
+  const [showPassword,setShowPassword] = useState(false)
+
+  const submit = async e => {
+    e.preventDefault()
+
+    if (mode === 'register') {
+      if (password !== confirmPassword) {
+        notify('As senhas não coincidem.', 'error')
+        return
+      }
+
+      if (cpf.replace(/\D/g, '').length !== 11) {
+        notify('Informe um CPF válido com 11 dígitos.', 'error')
+        return
+      }
+    }
+
+    setBusy(true)
+
+    try {
+      if (mode === 'register') {
+        await send('/auth/register', 'POST', {
+          nome: nome.trim(),
+          cpf: cpf.replace(/\D/g, ''),
+          contato: contato.trim(),
+          email: email.trim(),
+          password
+        })
+
+        notify('Conta criada com sucesso! Faça seu login.')
+        setMode('login')
+        setPassword('')
+        setConfirmPassword('')
+        setNome('')
+        setCpf('')
+        setContato('')
+      } else {
+        const result = await send('/auth/login', 'POST', {
+          email: email.trim(),
+          password
+        })
+
+        await onLogin(result.token)
+      }
+    } catch (err) {
+      notify(err.message, 'error')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="auth-screen">
+      <div className="auth-texture"/>
+
+      <div className="auth-top">
+        <div className="sidebar-brand">
+          <div className="brand-mark"><Activity/></div>
+          <div>
+            <strong>GYM<span>CONTROL</span></strong>
+            <small>TRAINING MANAGEMENT</small>
+          </div>
+        </div>
+
+        <div className="auth-tools">
+          <button className="auth-theme" onClick={() => setTheme(theme==='dark'?'light':'dark')}>
+            {theme==='dark'?<Sun size={17}/>:<Moon size={17}/>}
+            <span>{theme==='dark'?'Modo claro':'Modo escuro'}</span>
+          </button>
+
+          <button className="auth-theme" onClick={() => document.getElementById('auth-colors')?.classList.toggle('show')}>
+            <Palette size={17}/>
+            <span>Cor</span>
+          </button>
+
+          <div id="auth-colors" className="auth-color-pop">
+            {COLORS.map(c => (
+              <button
+                key={c.id}
+                style={{background:c.value}}
+                onClick={() => setAccent(c.id)}
+                aria-label={c.name}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="auth-layout">
+        <section className="auth-hero">
+          <span className="eyebrow">
+            <span/> PERFORMANCE, ORGANIZAÇÃO E EVOLUÇÃO
+          </span>
+
+          <h1>
+            SEU PRÓXIMO<br/>
+            NÍVEL COMEÇA<br/>
+            <em>NO TREINO.</em>
+          </h1>
+
+          <p>
+            Organize sua rotina, acompanhe seus exercícios e mantenha o foco
+            no que realmente importa: sua evolução.
+          </p>
+
+          <div className="auth-stats">
+            <div><strong>01</strong><span>PLANEJE</span></div>
+            <div><strong>02</strong><span>EXECUTE</span></div>
+            <div><strong>03</strong><span>EVOLUA</span></div>
+          </div>
+
+          <div className="hero-watermark">GC<span>.</span></div>
+        </section>
+
+        <section className="auth-card-wrap">
+          <div className="auth-card">
+            <div className="auth-card-kicker">
+              {mode==='login'?'ÁREA DE ACESSO':'NOVA CONTA'}
+            </div>
+
+            <h2>
+              {mode==='login'?'Bem-vindo ao GymControl.':'Crie sua conta.'}
+            </h2>
+
+            <p className="auth-description">
+              {mode==='login'
+                ? 'Entre com os dados da sua conta.'
+                : 'Preencha seus dados para começar a treinar.'}
+            </p>
+
+            <form onSubmit={submit} className="auth-form">
+
+              {mode==='register' && (
+                <>
+                  <FormField label="NOME COMPLETO" icon={UserRound}>
+                    <input
+                      type="text"
+                      value={nome}
+                      onChange={e=>setNome(e.target.value)}
+                      required
+                      maxLength={120}
+                      placeholder="Seu nome completo"
+                    />
+                  </FormField>
+
+                  <FormField label="CPF" icon={Hash}>
+                    <input
+                      type="text"
+                      value={cpf}
+                      onChange={e=>setCpf(e.target.value.replace(/\D/g,'').slice(0,11))}
+                      required
+                      inputMode="numeric"
+                      maxLength={11}
+                      placeholder="Somente números"
+                    />
+                  </FormField>
+
+                  <FormField label="CONTATO" icon={Phone}>
+                    <input
+                      type="tel"
+                      value={contato}
+                      onChange={e=>setContato(e.target.value)}
+                      placeholder="Seu telefone"
+                    />
+                  </FormField>
+                </>
+              )}
+
+              <FormField label="E-MAIL" icon={Mail}>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e=>setEmail(e.target.value)}
+                  required
+                  maxLength={150}
+                  placeholder="voce@email.com"
+                />
+              </FormField>
+
+              <FormField label="SENHA" icon={Lock}>
+                <input
+                  type={showPassword?'text':'password'}
+                  value={password}
+                  onChange={e=>setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  placeholder="Sua senha"
+                />
+
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={()=>setShowPassword(v=>!v)}
+                  aria-label="Mostrar ou ocultar senha"
+                >
+                  {showPassword?<EyeOff size={17}/>:<Eye size={17}/>}
+                </button>
+              </FormField>
+
+              {mode==='register' && (
+                <FormField label="CONFIRMAR SENHA" icon={Lock}>
+                  <input
+                    type={showPassword?'text':'password'}
+                    value={confirmPassword}
+                    onChange={e=>setConfirmPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    placeholder="Repita sua senha"
+                  />
+                </FormField>
+              )}
+
+              <button className="primary-button auth-submit" disabled={busy}>
+                {busy?<LoaderCircle className="spin" size={18}/>:null}
+                {mode==='login'?'ENTRAR NO PAINEL':'CRIAR MINHA CONTA'}
+                <ArrowUpRight size={18}/>
+              </button>
+            </form>
+
+            <div className="auth-switch">
+              {mode==='login'?'Ainda não tem uma conta?':'Já possui cadastro?'}
+              <button
+                type="button"
+                onClick={()=>{
+                  setMode(mode==='login'?'register':'login')
+                  setPassword('')
+                  setConfirmPassword('')
+                }}
+              >
+                {mode==='login'?'Criar conta':'Fazer login'}
+              </button>
+            </div>
+
+            <div className="auth-security">
+              <ShieldCheck size={15}/>
+              ACESSO PROTEGIDO POR AUTENTICAÇÃO
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div className="auth-bottom">
+        <span>GYMCONTROL © {new Date().getFullYear()}</span>
+        <span>DISCIPLINA CONSTRÓI RESULTADOS.</span>
+      </div>
+    </div>
+  )
 }
+
 
 function FormField({label,icon:Icon,children}) { return <label className="form-field"><span>{label}</span><div className="form-input-wrap"><Icon size={17}/>{children}</div></label> }
 
